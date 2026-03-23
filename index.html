@@ -258,6 +258,26 @@
     .result-tag.r { color: var(--correct); }
     .result-tag.w { color: var(--wrong); }
 
+    /* Next button (shown after wrong answer) */
+    button.next-btn {
+      display: none;
+      width: 100%;
+      margin-top: 12px;
+      background: var(--wrong);
+      color: #fff;
+      border: none;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 0.1em;
+      padding: 14px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    button.next-btn:hover { background: #cc3030; }
+    button.next-btn:active { transform: scale(0.98); }
+    button.next-btn.visible { display: block; animation: slideIn 0.2s ease; }
+
     /* Skip button */
     button.skip-btn {
       background: transparent;
@@ -373,7 +393,6 @@
 <div class="container">
 
   <header>
-    <div class="label-top">// Übung macht den Meister</div>
     <h1>ZAHLEN AUF<br><span>DEUTSCH</span></h1>
     <div class="stats">
       <div class="stat">
@@ -388,7 +407,7 @@
     </div>
     <div class="accuracy-bar-wrap">
       <div class="accuracy-label">
-        <span>Genauigkeit</span>
+        <span>Acertos</span>
         <span id="accuracy-pct">—</span>
       </div>
       <div class="accuracy-bar">
@@ -421,13 +440,14 @@
       <button class="submit-btn" id="submit-btn">OK</button>
     </div>
     <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="next-btn">Próxima pergunta →</button>
   </div>
 
-  <button class="skip-btn" id="skip-btn">Überspringen →</button>
+  <button class="skip-btn" id="skip-btn">Pular →</button>
 
   <!-- History -->
   <div class="history" id="history-section" style="margin-top:20px;">
-    <div class="history-title">Verlauf</div>
+    <div class="history-title">Recentes</div>
     <div class="history-list" id="history-list"></div>
   </div>
 
@@ -461,9 +481,17 @@
   const answerInput   = document.getElementById('answer-input');
   const submitBtn     = document.getElementById('submit-btn');
   const skipBtn       = document.getElementById('skip-btn');
+  const nextBtn       = document.getElementById('next-btn');
   const feedback      = document.getElementById('feedback');
   const quizCard      = document.getElementById('quiz-card');
   const historyList   = document.getElementById('history-list');
+
+  function setInputsDisabled(disabled) {
+    answerInput.disabled = disabled;
+    submitBtn.disabled   = disabled;
+    skipBtn.disabled     = disabled;
+    document.querySelectorAll('.char-btn').forEach(b => b.disabled = disabled);
+  }
 
   function newQuestion() {
     currentNumber = Math.floor(Math.random() * 101);
@@ -471,6 +499,8 @@
     answerInput.value = '';
     feedback.className = 'feedback';
     feedback.innerHTML = '';
+    nextBtn.classList.remove('visible');
+    setInputsDisabled(false);
     answerInput.focus();
   }
 
@@ -524,28 +554,35 @@
     const ans = getGermanNumber(currentNumber);
     const user = answerInput.value.trim();
     if (!user) return;
-
-    const correct = ans.toLowerCase() === user.toLowerCase();
-
+    let correct = ans.toLowerCase() === user.toLowerCase();
+    if (ans === "einhundert" && user === "hundert") correct = true;
+    
     if (correct) {
       correctCount++;
       streak++;
       feedback.className = 'feedback correct show';
       feedback.innerHTML = `<span class="feedback-icon">✓</span> Richtig!`;
+      flashCard(correct);
+      addHistory(currentNumber, ans, correct, user);
+      updateStats();
+      updateStreak();
+      setTimeout(newQuestion, 900);
     } else {
       wrongCount++;
       streak = 0;
       feedback.className = 'feedback wrong show';
       feedback.innerHTML = `<span class="feedback-icon">✗</span> Falsch — die Antwort lautet: <strong style="margin-left:6px;">${ans}</strong>`;
+      flashCard(correct);
+      addHistory(currentNumber, ans, correct, user);
+      updateStats();
+      updateStreak();
+      setInputsDisabled(true);
+      nextBtn.classList.add('visible');
     }
-
-    flashCard(correct);
-    addHistory(currentNumber, ans, correct, user);
-    updateStats();
-    updateStreak();
-
-    setTimeout(newQuestion, correct ? 900 : 1600);
   }
+
+  nextBtn.addEventListener('click', newQuestion);
+  nextBtn.addEventListener('keydown', e => { if (e.key === 'Enter') newQuestion(); });
 
   submitBtn.addEventListener('click', checkAnswer);
   skipBtn.addEventListener('click', () => {
@@ -557,7 +594,9 @@
     streak = 0;
     updateStats();
     updateStreak();
-    setTimeout(newQuestion, 1400);
+    flashCard(false);
+    setInputsDisabled(true);
+    nextBtn.classList.add('visible');
   });
 
   answerInput.addEventListener('keydown', e => {
