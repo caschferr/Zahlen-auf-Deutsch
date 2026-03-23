@@ -1,4 +1,4 @@
-# DeutschZahlen
+# Zahlen auf Deutsch
 App for practicing numbers from 0 - 100 in German!
 
 !!! THIS CODE WAS NOT ENTIRELY MADE BY ME !!!
