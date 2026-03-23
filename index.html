@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Deutsch Zahlen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --border: #2a2a2a;
+      --accent: #e8ff00;
+      --accent2: #ff4040;
+      --text: #f0f0f0;
+      --muted: #666;
+      --correct: #00e676;
+      --wrong: #ff4040;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(232,255,0,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(232,255,0,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: min(520px, 92vw);
+    }
+
+    /* Header */
+    header {
+      margin-bottom: 40px;
+      text-align: left;
+    }
+
+    .label-top {
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(60px, 14vw, 96px);
+      line-height: 0.9;
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+
+    h1 span {
+      color: var(--accent);
+    }
+
+    /* Stats bar */
+    .stats {
+      display: flex;
+      gap: 24px;
+      margin-top: 16px;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .stat strong {
+      color: var(--text);
+      font-size: 18px;
+      display: block;
+      font-weight: 600;
+    }
+
+    /* Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 40px;
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 4px; height: 100%;
+      background: var(--accent);
+    }
+
+    .number-display {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 100px;
+      line-height: 1;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      transition: opacity 0.15s;
+    }
+
+    .number-hint {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+
+    /* Input */
+    .input-row {
+      display: flex;
+      gap: 0;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-right: none;
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 16px;
+      padding: 14px 18px;
+      outline: none;
+      transition: border-color 0.2s;
+      caret-color: var(--accent);
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--muted);
+    }
+
+    button.submit-btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 0.08em;
+      padding: 14px 24px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    button.submit-btn:hover { background: #d4e800; }
+    button.submit-btn:active { transform: scale(0.97); }
+
+    /* Feedback */
+    .feedback {
+      min-height: 48px;
+      padding: 12px 0;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .feedback.show { opacity: 1; }
+
+    .feedback.correct { color: var(--correct); }
+    .feedback.wrong   { color: var(--wrong); }
+
+    .feedback-icon {
+      font-size: 20px;
+    }
+
+    /* Streak */
+    .streak-bar {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 20px;
+      height: 4px;
+    }
+
+    .streak-dot {
+      flex: 1;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+
+    .streak-dot.on { background: var(--accent); }
+
+    /* History */
+    .history {
+      margin-top: 0;
+    }
+
+    .history-title {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 140px;
+      overflow: hidden;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      padding: 7px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      animation: slideIn 0.25s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .history-item .num { color: var(--muted); font-size: 11px; }
+    .history-item .word { color: var(--text); }
+    .history-item .result-tag {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+    }
+
+    .result-tag.r { color: var(--correct); }
+    .result-tag.w { color: var(--wrong); }
+
+    /* Skip button */
+    button.skip-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      text-transform: uppercase;
+      margin-top: 12px;
+    }
+
+    button.skip-btn:hover {
+      border-color: var(--muted);
+      color: var(--text);
+    }
+
+    /* Flash animation */
+    @keyframes flashGreen {
+      0%   { box-shadow: 0 0 0 0 rgba(0,230,118,0); }
+      30%  { box-shadow: 0 0 0 8px rgba(0,230,118,0.25); }
+      100% { box-shadow: 0 0 0 0 rgba(0,230,118,0); }
+    }
+    @keyframes flashRed {
+      0%   { box-shadow: 0 0 0 0 rgba(255,64,64,0); }
+      30%  { box-shadow: 0 0 0 8px rgba(255,64,64,0.25); }
+      100% { box-shadow: 0 0 0 0 rgba(255,64,64,0); }
+    }
+    .flash-correct { animation: flashGreen 0.5s ease; }
+    .flash-wrong   { animation: flashRed 0.5s ease; }
+
+    /* Special chars */
+    .special-chars {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .char-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 15px;
+      width: 44px;
+      height: 36px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      position: relative;
+    }
+
+    .char-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(232,255,0,0.05);
+    }
+
+    .char-btn:active {
+      background: rgba(232,255,0,0.12);
+      transform: scale(0.95);
+    }
+
+    .char-btn .char-tooltip {
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: #000;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      padding: 2px 6px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+    }
+
+    .char-btn.copied .char-tooltip { opacity: 1; }
+
+    /* Accuracy meter */
+    .accuracy-bar-wrap {
+      margin-top: 6px;
+    }
+    .accuracy-label {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    .accuracy-bar {
+      height: 3px;
+      background: var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    .accuracy-fill {
+      position: absolute;
+      top: 0; left: 0;
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.5s ease;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="label-top">// Übung macht den Meister</div>
+    <h1>DEUTSCH<br><span>ZAHLEN</span></h1>
+    <div class="stats">
+      <div class="stat">
+        <strong id="stat-correct">0</strong>RICHTIG
+      </div>
+      <div class="stat">
+        <strong id="stat-wrong">0</strong>FALSCH
+      </div>
+      <div class="stat">
+        <strong id="stat-total">0</strong>TOTAL
+      </div>
+    </div>
+    <div class="accuracy-bar-wrap">
+      <div class="accuracy-label">
+        <span>Genauigkeit</span>
+        <span id="accuracy-pct">—</span>
+      </div>
+      <div class="accuracy-bar">
+        <div class="accuracy-fill" id="accuracy-fill" style="width:0%"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Streak dots -->
+  <div class="streak-bar" id="streak-bar">
+    <div class="streak-dot" id="sd0"></div>
+    <div class="streak-dot" id="sd1"></div>
+    <div class="streak-dot" id="sd2"></div>
+    <div class="streak-dot" id="sd3"></div>
+    <div class="streak-dot" id="sd4"></div>
+  </div>
+
+  <!-- Quiz card -->
+  <div class="card" id="quiz-card">
+    <div class="number-display" id="number-display">?</div>
+    <div class="number-hint">Wie heißt diese Zahl auf Deutsch?</div>
+    <div class="special-chars">
+      <button class="char-btn" data-char="ä">ä<span class="char-tooltip">inserido!</span></button>
+      <button class="char-btn" data-char="ö">ö<span class="char-tooltip">inserido!</span></button>
+      <button class="char-btn" data-char="ü">ü<span class="char-tooltip">inserido!</span></button>
+      <button class="char-btn" data-char="ß">ß<span class="char-tooltip">inserido!</span></button>
+    </div>
+    <div class="input-row">
+      <input type="text" id="answer-input" placeholder="Deine Antwort..." autocomplete="off" autocorrect="off" spellcheck="false"/>
+      <button class="submit-btn" id="submit-btn">OK</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <button class="skip-btn" id="skip-btn">Überspringen →</button>
+
+  <!-- History -->
+  <div class="history" id="history-section" style="margin-top:20px;">
+    <div class="history-title">Verlauf</div>
+    <div class="history-list" id="history-list"></div>
+  </div>
+
+</div>
+
+<script>
+  const units = [
+    "null","eins","zwei","drei","vier","fünf","sechs","sieben","acht","neun",
+    "zehn","elf","zwölf","dreizehn","vierzehn","fünfzehn","sechzehn",
+    "siebzehn","achtzehn","neunzehn"
+  ];
+  const tens = ["","","zwanzig","dreißig","vierzig","fünfzig","sechzig","siebzig","achtzig","neunzig"];
+
+  function getGermanNumber(n) {
+    if (n === 100) return "einhundert";
+    if (n < 20) return units[n];
+    const ten = Math.floor(n / 10);
+    const unit = n % 10;
+    if (unit === 0) return tens[ten];
+    const unitStr = (unit === 1) ? "ein" : units[unit];
+    return unitStr + "und" + tens[ten];
+  }
+
+  let currentNumber = 0;
+  let correctCount = 0;
+  let wrongCount = 0;
+  let streak = 0;
+  const history = [];
+
+  const numberDisplay = document.getElementById('number-display');
+  const answerInput   = document.getElementById('answer-input');
+  const submitBtn     = document.getElementById('submit-btn');
+  const skipBtn       = document.getElementById('skip-btn');
+  const feedback      = document.getElementById('feedback');
+  const quizCard      = document.getElementById('quiz-card');
+  const historyList   = document.getElementById('history-list');
+
+  function newQuestion() {
+    currentNumber = Math.floor(Math.random() * 101);
+    numberDisplay.textContent = currentNumber;
+    answerInput.value = '';
+    feedback.className = 'feedback';
+    feedback.innerHTML = '';
+    answerInput.focus();
+  }
+
+  function updateStats() {
+    document.getElementById('stat-correct').textContent = correctCount;
+    document.getElementById('stat-wrong').textContent   = wrongCount;
+    document.getElementById('stat-total').textContent   = correctCount + wrongCount;
+
+    const total = correctCount + wrongCount;
+    const pct = total > 0 ? Math.round((correctCount / total) * 100) : null;
+    document.getElementById('accuracy-pct').textContent = pct !== null ? pct + '%' : '—';
+    document.getElementById('accuracy-fill').style.width = (pct || 0) + '%';
+  }
+
+  function updateStreak() {
+    for (let i = 0; i < 5; i++) {
+      const dot = document.getElementById('sd' + i);
+      dot.classList.toggle('on', i < (streak % 6 === 0 && streak > 0 ? 5 : streak % 5));
+    }
+    // light all 5 when streak hits 5+
+    const active = Math.min(streak, 5);
+    for (let i = 0; i < 5; i++) {
+      document.getElementById('sd' + i).classList.toggle('on', i < active);
+    }
+  }
+
+  function addHistory(n, word, correct, userAnswer) {
+    history.unshift({ n, word, correct, userAnswer });
+    if (history.length > 4) history.pop();
+
+    historyList.innerHTML = '';
+    history.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.innerHTML = `
+        <span class="num">${item.n}</span>
+        <span class="word">${item.word}</span>
+        <span class="result-tag ${item.correct ? 'r' : 'w'}">${item.correct ? 'RICHTIG' : 'FALSCH'}</span>
+      `;
+      historyList.appendChild(div);
+    });
+  }
+
+  function flashCard(correct) {
+    quizCard.classList.remove('flash-correct', 'flash-wrong');
+    void quizCard.offsetWidth; // reflow
+    quizCard.classList.add(correct ? 'flash-correct' : 'flash-wrong');
+  }
+
+  function checkAnswer() {
+    const ans = getGermanNumber(currentNumber);
+    const user = answerInput.value.trim();
+    if (!user) return;
+
+    const correct = ans.toLowerCase() === user.toLowerCase();
+
+    if (correct) {
+      correctCount++;
+      streak++;
+      feedback.className = 'feedback correct show';
+      feedback.innerHTML = `<span class="feedback-icon">✓</span> Richtig!`;
+    } else {
+      wrongCount++;
+      streak = 0;
+      feedback.className = 'feedback wrong show';
+      feedback.innerHTML = `<span class="feedback-icon">✗</span> Falsch — die Antwort lautet: <strong style="margin-left:6px;">${ans}</strong>`;
+    }
+
+    flashCard(correct);
+    addHistory(currentNumber, ans, correct, user);
+    updateStats();
+    updateStreak();
+
+    setTimeout(newQuestion, correct ? 900 : 1600);
+  }
+
+  submitBtn.addEventListener('click', checkAnswer);
+  skipBtn.addEventListener('click', () => {
+    const ans = getGermanNumber(currentNumber);
+    feedback.className = 'feedback wrong show';
+    feedback.innerHTML = `<span class="feedback-icon">→</span> Die Antwort war: <strong style="margin-left:6px;">${ans}</strong>`;
+    addHistory(currentNumber, ans, false, '(übersprungen)');
+    wrongCount++;
+    streak = 0;
+    updateStats();
+    updateStreak();
+    setTimeout(newQuestion, 1400);
+  });
+
+  answerInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkAnswer();
+  });
+
+  // Special char buttons — insert into input at cursor
+  document.querySelectorAll('.char-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const char = btn.dataset.char;
+      const input = answerInput;
+      const start = input.selectionStart;
+      const end   = input.selectionEnd;
+      input.value = input.value.slice(0, start) + char + input.value.slice(end);
+      input.selectionStart = input.selectionEnd = start + 1;
+      input.focus();
+
+      btn.classList.add('copied');
+      setTimeout(() => btn.classList.remove('copied'), 900);
+    });
+  });
+
+  newQuestion();
+</script>
+</body>
+</html>
